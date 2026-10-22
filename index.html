@@ -90,6 +90,23 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
   aside{width:auto;max-height:46vh;border-right:0;border-top:1px solid var(--line);padding:12px;gap:10px}
   #qname{font-size:19px}
   #q{right:56px}
+  .help{display:none}                                  /* 手機操作直覺，不顯示操作說明 */
+  /* 作答中：只留「提交」與工具列，把空間讓給地圖 */
+  body[data-panel="play"] aside{padding:8px 10px;gap:8px;max-height:none}
+  body[data-panel="play"] #settings,
+  body[data-panel="play"] #stats,
+  body[data-panel="play"] #p-play hr,
+  body[data-panel="play"] #p-play .kv{display:none!important}
+  body[data-panel="play"] #p-play{gap:8px!important}
+  body[data-panel="play"] #b-submit{padding:11px 16px;font-size:16px;box-shadow:0 3px 0 var(--accent-d)}
+  body[data-panel="play"] .tools{grid-template-columns:repeat(6,1fr);gap:5px}
+  body[data-panel="play"] .tool{padding:6px 0;font-size:10px;gap:1px}
+  body[data-panel="play"] .tool span{font-size:16px}
+  /* 結果畫面：兩個按鈕並排放最上面，設定列移到最下面 */
+  body[data-panel="reveal"] #settings{order:9}
+  body[data-panel="reveal"] #p-reveal{flex-direction:row!important;flex-wrap:wrap;gap:8px!important}
+  body[data-panel="reveal"] #p-reveal>*{width:100%}
+  body[data-panel="reveal"] #p-reveal>.btn{order:-1;width:calc(50% - 4px);padding:11px 12px;font-size:15px}
 }
 </style>
 </head>
@@ -98,7 +115,7 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
 <main>
 <aside>
   <!-- 設定（作答中鎖定） -->
-  <div style="display:flex;gap:10px">
+  <div id="settings" style="display:flex;gap:10px">
     <label class="f" style="flex:1">出題範圍
       <select id="o-region">
         <option value="all">全台灣出題</option>
@@ -129,7 +146,7 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
   <section id="p-play" class="panel hidden" style="flex-direction:column;gap:14px">
     <button class="btn" id="b-submit">在此提交 <span>→</span></button>
     <hr>
-    <div class="stats"><div>畫下的線<b id="s-n">0<i>條</i></b></div><div>距離<b id="s-km">0<i>km</i></b></div></div>
+    <div class="stats" id="stats"><div>畫下的線<b id="s-n">0<i>條</i></b></div><div>距離<b id="s-km">0<i>km</i></b></div></div>
     <hr>
     <div class="tools">
       <button class="tool on" data-mode="draw"><span>✎</span>描繪</button>
@@ -287,6 +304,8 @@ let name=null, tStart=0, timer=null, reveal=false, lastResult=null, revealRAF=0;
 function show(panel){
   document.querySelectorAll('.panel').forEach(p=>{const on=p.id==='p-'+panel;p.classList.toggle('hidden',!on);if(on)p.style.display='flex'});
   $('o-region').disabled=$('o-tol').disabled=(panel==='play');
+  document.body.dataset.panel=panel;
+  sizeCanvas();   // 面板高度改變會影響地圖尺寸，立即重算（之後的 fitBounds 才會用到正確大小）
 }
 function toast(t,ms=3500){const e=$('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(toast._t);toast._t=setTimeout(()=>e.classList.add('hidden'),ms)}
 function applyPE(){
