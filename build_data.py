@@ -44,13 +44,10 @@ for n, p in polys.items():
     sl = [l for l in lines_of(shared) if l.length > 0.01]
     island = (not sl) or sum(l.length for l in sl) < 0.05
     border = b if island else unary_union(sl)
-    if island:
-        ls = sorted(lines_of(border), key=lambda l: -l.length)
-        tot = sum(l.length for l in ls); acc = 0; keep = []
-        for l in ls:
-            if acc >= 0.85 * tot or len(keep) >= 12: break
-            keep.append(l); acc += l.length
-        border = unary_union(keep)
+    if island:  # 離島只取最大島的海岸線（與原版相同）
+        pg = max(p.geoms if p.geom_type == 'MultiPolygon' else [p], key=lambda g: g.area)
+        border = LineString(pg.exterior.coords)
+        p = pg  # bbox 也只取最大島
     out[n] = {'island': island, 'lines': enc(border), 'bbox': [round(v, 4) for v in p.bounds]}
     print(n, island, len(out[n]['lines']), sum(len(l) for l in out[n]['lines']))
 
