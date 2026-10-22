@@ -206,7 +206,6 @@ const HELP=[
   [['F'],'移動地圖'],
   [['E'],'橡皮擦（點到線就擦掉）'],
   [['Z'],'復原上一條線'],
-  [['空白鍵'],'按住時暫時移動地圖'],
   [['Enter'],'提交答案'],
 ];
 document.querySelectorAll('[data-help]').forEach(el=>{
@@ -290,9 +289,8 @@ function show(panel){
   $('o-region').disabled=$('o-tol').disabled=(panel==='play');
 }
 function toast(t,ms=3500){const e=$('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(toast._t);toast._t=setTimeout(()=>e.classList.add('hidden'),ms)}
-let spaceDown=false;
 function applyPE(){
-  cv.style.pointerEvents=(state==='play'&&mode!=='pan'&&!spaceDown)?'auto':'none';
+  cv.style.pointerEvents=(state==='play'&&mode!=='pan')?'auto':'none';
   cv.style.cursor=mode==='draw'?'crosshair':mode==='erase'?'cell':'';
 }
 function setMode(m){
@@ -334,7 +332,7 @@ const evLL=e=>{const r=cv.getBoundingClientRect();return map.containerPointToLat
 const evPt=e=>{const r=cv.getBoundingClientRect();return L.point(e.clientX-r.left,e.clientY-r.top)};
 let lastPt=null, erased=false;
 // 畫布在地圖容器內：繪圖／橡皮擦時，擋住按下事件，避免 Leaflet 把它當成拖曳平移（滾輪、雙指縮放不受影響）
-const drawing=()=>state==='play'&&mode!=='pan'&&!spaceDown;
+const drawing=()=>state==='play'&&mode!=='pan';
 cv.addEventListener('mousedown',e=>{if(drawing())e.stopPropagation()});
 cv.addEventListener('touchstart',e=>{if(drawing()&&e.touches.length===1)e.stopPropagation()},{passive:true});
 cv.addEventListener('dblclick',e=>{if(drawing())e.stopPropagation()});
@@ -643,7 +641,6 @@ $('b-undo').onclick=undo; $('b-clear').onclick=clearAll; $('b-fit').onclick=()=>
 document.querySelectorAll('.tool[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});  // 避免按鍵再次觸發剛點過的按鈕
 document.addEventListener('keydown',e=>{
-  if(e.code==='Space'&&state==='play'&&e.target.tagName!=='SELECT'){e.preventDefault();if(!spaceDown){spaceDown=true;applyPE()}return}
   if(e.target.tagName==='SELECT'||e.metaKey||e.ctrlKey) return;
   const k=e.key.toLowerCase();
   if(state==='play'){ if(k==='d')setMode('draw'); else if(k==='f')setMode('pan'); else if(k==='e')setMode('erase'); else if(k==='z')undo(); else if(k==='enter')submit() }
@@ -651,8 +648,6 @@ document.addEventListener('keydown',e=>{
 });
 const prefs=store.get(PKEY,{}); if(REGIONS[prefs.region])$('o-region').value=prefs.region; if(['10','5','2'].includes(prefs.tol))$('o-tol').value=prefs.tol;
 
-document.addEventListener('keyup',e=>{if(e.code==='Space'&&spaceDown){e.preventDefault();spaceDown=false;applyPE()}});
-window.addEventListener('blur',()=>{if(spaceDown){spaceDown=false;applyPE()}});
 sizeCanvas(); setMode('pan'); show('menu');
 })();
 </script>
