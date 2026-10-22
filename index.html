@@ -333,6 +333,11 @@ map.on('move zoom viewreset resize',redraw);
 const evLL=e=>{const r=cv.getBoundingClientRect();return map.containerPointToLatLng([e.clientX-r.left,e.clientY-r.top])};
 const evPt=e=>{const r=cv.getBoundingClientRect();return L.point(e.clientX-r.left,e.clientY-r.top)};
 let lastPt=null, erased=false;
+// 畫布在地圖容器內：繪圖／橡皮擦時，擋住按下事件，避免 Leaflet 把它當成拖曳平移（滾輪、雙指縮放不受影響）
+const drawing=()=>state==='play'&&mode!=='pan'&&!spaceDown;
+cv.addEventListener('mousedown',e=>{if(drawing())e.stopPropagation()});
+cv.addEventListener('touchstart',e=>{if(drawing()&&e.touches.length===1)e.stopPropagation()},{passive:true});
+cv.addEventListener('dblclick',e=>{if(drawing())e.stopPropagation()});
 const touches=new Set();
 cv.addEventListener('pointerdown',e=>{
   touches.add(e.pointerId);
