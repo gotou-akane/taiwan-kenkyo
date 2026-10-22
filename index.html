@@ -118,12 +118,11 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
   <div id="settings" style="display:flex;gap:10px">
     <label class="f" style="flex:1">出題範圍
       <select id="o-region">
-        <option value="all">全台灣出題</option>
+        <option value="all">全台灣出題（19 縣市）</option>
         <option value="north">北部出題</option>
         <option value="central">中部出題</option>
         <option value="south">南部出題</option>
         <option value="east">東部出題</option>
-        <option value="island">離島出題</option>
       </select>
     </label>
     <label class="f" style="flex:1">判定寬鬆度
@@ -137,7 +136,7 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
 
   <!-- 開始前 -->
   <section id="p-menu" class="panel" style="display:flex;flex-direction:column;gap:14px">
-    <p class="d">隨機抽出一個縣市，<b>60 秒內</b>在地圖上描出它的邊界，依與實際縣市界的一致率計分，滿分 10 萬點。海岸線不用畫、海上的線不計分；離島（澎湖、金門、連江）則描繪最大島的海岸線。</p>
+    <p class="d">隨機抽出一個縣市，<b>60 秒內</b>在地圖上描出它的邊界，依與實際縣市界的一致率計分，滿分 10 萬點。海岸線不用畫、海上的線不計分。</p>
     <div class="help" data-help></div>
     <button class="btn" id="b-start">開始遊戲 <span>→</span></button>
   </section>
@@ -203,15 +202,13 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
 (() => {
 'use strict';
 const D = window.TW_DATA;
-const NAMES = Object.keys(D.counties);
 const REGIONS = {
-  all: NAMES,
   north: ['基隆市','臺北市','新北市','桃園市','新竹市','新竹縣','苗栗縣'],
   central: ['臺中市','彰化縣','南投縣','雲林縣'],
   south: ['嘉義市','嘉義縣','臺南市','高雄市','屏東縣'],
   east: ['宜蘭縣','花蓮縣','臺東縣'],
-  island: ['澎湖縣','金門縣','連江縣'],
 };
+REGIONS.all=[...REGIONS.north,...REGIONS.central,...REGIONS.south,...REGIONS.east];   // 題庫不含離島（澎湖、金門、連江）
 const ROUND_SEC = 60;
 const MAIN_BOUNDS = [[21.8,119.95],[25.45,122.15]];
 const $ = id => document.getElementById(id);
@@ -479,7 +476,7 @@ function fitCounty(n,pad=.25){
   const b=D.counties[n].bbox, dx=(b[2]-b[0])*pad+.01, dy=(b[3]-b[1])*pad+.01;
   map.fitBounds([[b[1]-dy,b[0]-dx],[b[3]+dy,b[2]+dx]]);
 }
-const fitStart=()=>D.counties[name].island?fitCounty(name,.4):map.fitBounds(MAIN_BOUNDS);
+const fitStart=()=>map.fitBounds(MAIN_BOUNDS);
 function startRound(){
   cancelAnimationFrame(revealRAF);
   const region=$('o-region').value;
@@ -487,14 +484,13 @@ function startRound(){
   name=pick(region);
   state='play'; reveal=false; strokes=[]; history=[]; cur=null; lastResult=null;
   show('play');
-  const island=D.counties[name].island;
   $('q').classList.remove('hidden');
   $('qname').textContent=name; $('qsub').textContent='一題決勝';
   const best=store.get(BKEY,{})[name];
   $('s-best').textContent=best==null?'—':best.toFixed(1)+'%';
   fitStart(); setMode('draw'); update(); redraw();
   tStart=performance.now(); clearInterval(timer); timer=setInterval(tick,40); tick();
-  toast(island?'描出本島的海岸線・滾輪可縮放':'描出這個縣市的邊界・海岸線不用畫、海上的線不計分・滾輪可縮放');
+  toast('描出這個縣市的邊界・海岸線不用畫、海上的線不計分・滾輪可縮放');
 }
 function tick(){
   const left=Math.max(0,ROUND_SEC-(performance.now()-tStart)/1000);
