@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>縣界王 台灣版</title>
-<meta name="description" content="隨機抽出一個縣市，30 秒內描出它的邊界，依與實際縣市界的一致率計分。">
+<meta name="description" content="隨機抽出一個縣市，60 秒內描出它的邊界，依與實際縣市界的一致率計分。">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
@@ -69,6 +69,22 @@ hr{border:0;border-top:1px solid var(--line);width:100%;margin:0}
 .legend i.b{border-top-style:dashed;border-color:var(--blue)}
 .legend i.r{border-color:var(--red)}
 .leaflet-control-attribution{font-size:9px}
+#share{position:fixed;inset:0;z-index:2000;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}
+#share .card{-webkit-overflow-scrolling:touch;background:var(--bg);border-radius:16px;padding:14px;max-width:560px;width:100%;max-height:100%;display:flex;flex-direction:column;gap:12px;overflow:auto}
+#share img{flex:none;width:100%;max-height:42vh;object-fit:contain;border-radius:10px;background:#fff}
+#share .row{flex:none;display:flex;gap:8px;flex-wrap:wrap}
+#share .row .btn{flex:1;min-width:120px;font-size:15px;padding:12px 14px}
+#share textarea{flex:none;width:100%;font:inherit;font-size:13px;line-height:1.6;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;resize:none}
+#share .tip{font-size:12px;color:var(--muted);text-align:center;margin:0}
+.help{display:flex;flex-direction:column;gap:9px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+.help h3{margin:0 0 2px;font-size:13px;color:var(--ink)}
+.help .r{display:flex;align-items:center;gap:8px;font-size:13px;color:#33484a}
+.help .r .k{flex:none;min-width:92px;display:flex;gap:4px;flex-wrap:wrap}
+kbd{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;font:700 13px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);
+  background:linear-gradient(#fff,#efe9db);border:1px solid #c7bea9;border-bottom-width:4px;border-radius:7px;box-shadow:0 1px 0 #fff inset}
+kbd.w{min-width:64px}
+kbd.m{font-family:inherit}
+kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
 @media (max-width:760px){
   main{flex-direction:column-reverse}
   aside{width:auto;max-height:46vh;border-right:0;border-top:1px solid var(--line);padding:12px;gap:10px}
@@ -96,15 +112,16 @@ hr{border:0;border-top:1px solid var(--line);width:100%;margin:0}
     <label class="f" style="flex:1">判定寬鬆度
       <select id="o-tol">
         <option value="10">簡單・10 km</option>
-        <option value="4" selected>普通・4 km</option>
-        <option value="1">嚴格・1 km</option>
+        <option value="5" selected>普通・5 km</option>
+        <option value="2">嚴格・2 km</option>
       </select>
     </label>
   </div>
 
   <!-- 開始前 -->
   <section id="p-menu" class="panel" style="display:flex;flex-direction:column;gap:14px">
-    <p class="d">隨機抽出一個縣市，<b>30 秒內</b>在地圖上描出它的邊界，依與實際縣市界的一致率計分，滿分 10 萬點。海岸線不用畫、海上的線不計分；離島（澎湖、金門、連江）則描繪最大島的海岸線。</p>
+    <p class="d">隨機抽出一個縣市，<b>60 秒內</b>在地圖上描出它的邊界，依與實際縣市界的一致率計分，滿分 10 萬點。海岸線不用畫、海上的線不計分；離島（澎湖、金門、連江）則描繪最大島的海岸線。</p>
+    <div class="help" data-help></div>
     <button class="btn" id="b-start">開始遊戲 <span>→</span></button>
   </section>
 
@@ -124,7 +141,7 @@ hr{border:0;border-top:1px solid var(--line);width:100%;margin:0}
     </div>
     <hr>
     <div class="kv"><span>此縣市個人最佳</span><b id="s-best">—</b></div>
-    <p class="d" style="font-size:12px;color:var(--muted)">操作：滾輪／雙指縮放。要平移地圖請切到「移動」。快捷鍵：D 描繪、M 移動、E 橡皮擦、Z 復原、Enter 提交。</p>
+    <div class="help" data-help></div>
   </section>
 
   <!-- 結果 -->
@@ -139,7 +156,7 @@ hr{border:0;border-top:1px solid var(--line);width:100%;margin:0}
     </div>
     <div class="legend"><span><i class="r"></i>你的線</span><span><i class="b"></i>正確縣市界</span></div>
     <button class="btn" id="b-again">再玩一題 <span>→</span></button>
-    <button class="btn sec" id="b-share">分享結果 <span>↗</span></button>
+    <button class="btn sec" id="b-share">分享結果圖片 <span>↗</span></button>
   </section>
 </aside>
 
@@ -150,6 +167,18 @@ hr{border:0;border-top:1px solid var(--line);width:100%;margin:0}
   <div id="toast" class="hidden"></div>
 </div>
 </main>
+<div id="share" class="hidden"><div class="card">
+  <img id="share-img" alt="分享圖片">
+  <textarea id="sh-text" rows="12" readonly></textarea>
+  <div class="row">
+    <button class="btn" id="sh-share">分享 <span>↗</span></button>
+    <button class="btn sec" id="sh-dl">下載圖片 <span>↓</span></button>
+    <button class="btn sec" id="sh-copy">複製圖片 <span>⧉</span></button>
+    <button class="btn sec" id="sh-copytext">複製文字 <span>⧉</span></button>
+  </div>
+  <button class="btn sec" id="sh-close" style="justify-content:center">關閉</button>
+  <p class="tip">圖片包含你的線、正解、等級、評語與全部分數；文字含兩個遊戲的標題與網址</p>
+</div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="data/counties.js"></script>
@@ -166,13 +195,33 @@ const REGIONS = {
   east: ['宜蘭縣','花蓮縣','臺東縣'],
   island: ['澎湖縣','金門縣','連江縣'],
 };
-const ROUND_SEC = 30;
+const ROUND_SEC = 60;
 const MAIN_BOUNDS = [[21.8,119.95],[25.45,122.15]];
 const $ = id => document.getElementById(id);
 
+/* ---------- 操作說明（待機與作答中共用） ---------- */
+const HELP=[
+  [['滾輪'],'縮放地圖（也可用雙指）'],
+  [['D'],'描繪'],
+  [['F'],'移動地圖'],
+  [['E'],'橡皮擦（點到線就擦掉）'],
+  [['Z'],'復原上一條線'],
+  [['空白鍵'],'按住時暫時移動地圖'],
+  [['Enter'],'提交答案'],
+];
+document.querySelectorAll('[data-help]').forEach(el=>{
+  el.innerHTML='<h3>操作方式</h3>'+HELP.map(([k,t])=>`<div class="r"><span class="k">${k.map(x=>`<kbd class="${x.length>1?'w':''} ${x==='滾輪'?'m':''}">${x==='滾輪'?'滾輪':x}</kbd>`).join('')}</span><span>${t}</span></div>`).join('');
+});
+
 /* ---------- 地圖 ---------- */
-const map = L.map('map',{minZoom:7,maxZoom:14,zoomSnap:0.25,doubleClickZoom:false,worldCopyJump:false});
+const map = L.map('map',{zoomControl:false,minZoom:7,maxZoom:14,zoomSnap:0.25,doubleClickZoom:false,worldCopyJump:false});
+L.control.zoom({position:'topright'}).addTo(map);
 map.fitBounds(MAIN_BOUNDS);
+const SITE_URL='gotou-akane.github.io/taiwan-kenkyo';
+const SITE_FULL='https://'+SITE_URL+'/';
+const ORIG_TITLE='県境王', ORIG_MAKER='KSKだぜGAMES', ORIG_URL='https://kskdazegames.com/games/kenkyo';
+const ATTR_PAGE='地形：AWS Open Data Terrain Tiles（SRTM、GMTED2010 資料由美國地質調查局 USGS 提供；ETOPO1 資料由 NOAA NCEI 提供）｜縣市界：內政部國土測繪中心「鄉(鎮、市、區)界線」（本站合併並簡化）｜玩法靈感：KSKだぜGAMES「県境王」';
+const ATTR_IMG=['地形：AWS Open Data Terrain Tiles（SRTM、GMTED2010 資料由美國地質調查局 USGS 提供；ETOPO1 資料由 NOAA NCEI 提供）','縣市界：內政部國土測繪中心「鄉(鎮、市、區)界線」（本站合併並簡化）','玩法靈感：KSKだぜGAMES「県境王」｜本圖非 USGS、NOAA、內政部或前述單位所背書'];
 /* 地形底圖：AWS Open Data「Terrain Tiles」(Terrarium 高程編碼)，在瀏覽器端即時計算山影與高度色。
    高程來源：SRTM、GMTED2010（USGS）、ETOPO1（NOAA）。 */
 const RAMP=[[0,[228,233,203]],[300,[208,216,170]],[1000,[192,174,130]],[2000,[164,134,104]],[3500,[134,108,98]]];
@@ -215,12 +264,13 @@ const Hillshade=L.GridLayer.extend({
     return c;
   }
 });
-new Hillshade({maxNativeZoom:12,maxZoom:14,minZoom:7,tileSize:256,
-  attribution:'地形：AWS Terrain Tiles（SRTM、GMTED2010 © USGS；ETOPO1 © NOAA）｜縣市界：g0v/ronnywang twgeojson（內政部）｜玩法靈感：KSKだぜGAMES「県境王」'}).addTo(map);
+const hill=new Hillshade({maxNativeZoom:12,maxZoom:14,minZoom:7,tileSize:256,
+  attribution:ATTR_PAGE}).addTo(map);
 D.coast.forEach(ring => L.polyline(ring.map(p=>[p[1],p[0]]),{color:'#3b6f86',weight:1.4,opacity:.85,interactive:false}).addTo(map));
 
 /* ---------- 畫布 ---------- */
 const cv = $('draw'), cx = cv.getContext('2d');
+map.getContainer().appendChild(cv);   // 放進地圖容器，滾輪與雙指縮放才會傳給 Leaflet
 const dpr = window.devicePixelRatio||1;
 function sizeCanvas(){
   const r = $('mapwrap').getBoundingClientRect();
@@ -240,11 +290,15 @@ function show(panel){
   $('o-region').disabled=$('o-tol').disabled=(panel==='play');
 }
 function toast(t,ms=3500){const e=$('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(toast._t);toast._t=setTimeout(()=>e.classList.add('hidden'),ms)}
+let spaceDown=false;
+function applyPE(){
+  cv.style.pointerEvents=(state==='play'&&mode!=='pan'&&!spaceDown)?'auto':'none';
+  cv.style.cursor=mode==='draw'?'crosshair':mode==='erase'?'cell':'';
+}
 function setMode(m){
   mode=m;
   document.querySelectorAll('.tool[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
-  cv.style.pointerEvents=(state==='play'&&m!=='pan')?'auto':'none';
-  cv.style.cursor=m==='draw'?'crosshair':m==='erase'?'cell':'';
+  applyPE();
 }
 const store={
   get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},
@@ -279,7 +333,10 @@ map.on('move zoom viewreset resize',redraw);
 const evLL=e=>{const r=cv.getBoundingClientRect();return map.containerPointToLatLng([e.clientX-r.left,e.clientY-r.top])};
 const evPt=e=>{const r=cv.getBoundingClientRect();return L.point(e.clientX-r.left,e.clientY-r.top)};
 let lastPt=null, erased=false;
+const touches=new Set();
 cv.addEventListener('pointerdown',e=>{
+  touches.add(e.pointerId);
+  if(touches.size>1){cur=null;lastPt=null;redraw();return}   // 雙指：交給地圖縮放，並放棄這一筆
   if(state!=='play'||mode==='pan') return;
   cv.setPointerCapture(e.pointerId); lastPt=evPt(e);
   if(mode==='draw') cur=[evLL(e)]; else {erased=false;eraseAt(lastPt)}
@@ -294,7 +351,8 @@ function endStroke(){
   if(!lastPt) return; lastPt=null;
   if(mode==='draw'&&cur){ if(cur.length>=2){pushHist();strokes.push(cur)} cur=null; update(); redraw() }
 }
-cv.addEventListener('pointerup',endStroke);cv.addEventListener('pointercancel',endStroke);
+const up=e=>{touches.delete(e.pointerId);endStroke()};
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 function eraseAt(p){
   const keep=strokes.filter(s=>!s.some(ll=>pt(ll).distanceTo(p)<12));
   if(keep.length!==strokes.length){ if(!erased){pushHist();erased=true} strokes=keep; update(); redraw() }
@@ -431,7 +489,7 @@ function update(){
 function submit(){
   if(state!=='play') return;
   clearInterval(timer); state='reveal'; reveal=true; cur=null; lastPt=null;
-  cv.style.pointerEvents='none';
+  applyPE();
   const tol=+$('o-tol').value, r=score(name,tol,strokes);
   lastResult=r;
   const best=store.get(BKEY,{}), prev=best[name];
@@ -453,16 +511,123 @@ function submit(){
     if(k<1)revealRAF=requestAnimationFrame(f);
   })();
 }
-async function share(){
-  if(!lastResult)return;
-  const rk=rankOf(lastResult.percent,name);
-  const text=`我在「縣界王 台灣版」畫了${name}：一致率 ${lastResult.percent.toFixed(1)}%（${lastResult.points.toLocaleString()} 點・等級 ${rk.l}「${rk.t}」）！`;
-  const url=location.href.split('#')[0];
-  try{
-    if(navigator.share){await navigator.share({text,url});return}
-    await navigator.clipboard.writeText(text+'\n'+url); toast('已複製結果，可以貼給朋友');
-  }catch{}
+const TOL_LABEL={10:'簡單',5:'普通',2:'嚴格'};
+const FONT='"PingFang TC","Noto Sans TC","Microsoft JhengHei",-apple-system,sans-serif';
+function getTile(z,x,y){return new Promise(res=>{const c=hill.createTile({x,y,z},()=>res(c))})}
+async function buildShareImage(){
+  const W=1080,H=1512, BX=40,BY=130,BW=1000,BH=700;
+  const cvs=document.createElement('canvas'); cvs.width=W; cvs.height=H; const g=cvs.getContext('2d');
+  const tol=+$('o-tol').value, r=lastResult, rk=rankOf(r.percent,name);
+  g.fillStyle='#f4f1ea'; g.fillRect(0,0,W,H);
+  // 標題列
+  g.fillStyle='#1f3a3d'; g.font=`800 54px ${FONT}`; g.textBaseline='alphabetic'; g.textAlign='left';
+  g.fillText('縣界王 台灣版',BX,78);
+  g.fillStyle='#7b8a8a'; g.font=`600 24px ${FONT}`; g.fillText('隨機抽縣市・限時描出邊界',BX,112);
+  g.textAlign='right'; g.fillStyle='#b64a2d'; g.font=`800 54px ${FONT}`; g.fillText(name,W-BX,78); g.textAlign='left';
+
+  // 地圖範圍：正解 ∪ 玩家的線
+  const pts=[]; D.counties[name].lines.forEach(l=>l.forEach(c=>pts.push(L.latLng(c[1],c[0])))); strokes.forEach(st=>st.forEach(p=>pts.push(p)));
+  let la0=90,la1=-90,lo0=999,lo1=-999;
+  for(const p of pts){la0=Math.min(la0,p.lat);la1=Math.max(la1,p.lat);lo0=Math.min(lo0,p.lng);lo1=Math.max(lo1,p.lng)}
+  const padLa=(la1-la0)*.1+.01, padLo=(lo1-lo0)*.1+.01; la0-=padLa;la1+=padLa;lo0-=padLo;lo1+=padLo;
+  const crs=L.CRS.EPSG3857, P=(ll,z)=>crs.latLngToPoint(L.latLng(ll),z);
+  const a7=P([la1,lo0],7), b7=P([la0,lo1],7);
+  const zf=Math.log2(Math.min(BW/Math.abs(b7.x-a7.x),BH/Math.abs(b7.y-a7.y)))+7;
+  const zt=Math.max(7,Math.min(12,Math.round(zf))), sc=Math.pow(2,zf-zt);
+  const ctr=P([(la0+la1)/2,(lo0+lo1)/2],zt);
+  const X=ll=>(P(ll,zt).x-ctr.x)*sc+BX+BW/2, Y=ll=>(P(ll,zt).y-ctr.y)*sc+BY+BH/2;
+
+  g.save(); g.beginPath(); g.roundRect(BX,BY,BW,BH,22); g.clip();
+  g.fillStyle='#d6e2e5'; g.fillRect(BX,BY,BW,BH);
+  const x0=Math.floor((ctr.x-BW/2/sc)/256), x1=Math.floor((ctr.x+BW/2/sc)/256), y0=Math.floor((ctr.y-BH/2/sc)/256), y1=Math.floor((ctr.y+BH/2/sc)/256);
+  const jobs=[]; for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++)jobs.push(getTile(zt,tx,ty).then(c=>({c,tx,ty})));
+  for(const {c,tx,ty} of await Promise.all(jobs)){
+    g.drawImage(c,(tx*256-ctr.x)*sc+BX+BW/2,(ty*256-ctr.y)*sc+BY+BH/2,256*sc+1,256*sc+1);
+  }
+  g.lineJoin='round'; g.lineCap='round';
+  g.strokeStyle='#3b6f86'; g.lineWidth=2.5;                                  // 海岸線
+  for(const ring of D.coast){g.beginPath();ring.forEach((c,i)=>{const ll=[c[1],c[0]];i?g.lineTo(X(ll),Y(ll)):g.moveTo(X(ll),Y(ll))});g.stroke()}
+  const trace=(lines,toLL)=>{for(const l of lines){g.beginPath();l.forEach((c,i)=>{const ll=toLL(c);i?g.lineTo(X(ll),Y(ll)):g.moveTo(X(ll),Y(ll))})}};
+  const path=(lines,toLL)=>{for(const l of lines){g.beginPath();l.forEach((c,i)=>{const ll=toLL(c);i?g.lineTo(X(ll),Y(ll)):g.moveTo(X(ll),Y(ll))});g.stroke()}};
+  const trueLL=c=>[c[1],c[0]], userLL=p=>[p.lat,p.lng];
+  g.setLineDash([]); g.strokeStyle='#fff'; g.lineWidth=10; path(D.counties[name].lines,trueLL);   // 白底襯線
+  g.setLineDash([22,16]); g.strokeStyle='#2f6fe0'; g.lineWidth=6; path(D.counties[name].lines,trueLL);
+  g.setLineDash([]); g.strokeStyle='#fff'; g.lineWidth=11; path(strokes,userLL);
+  g.strokeStyle='#e0404a'; g.lineWidth=6; path(strokes,userLL);
+  // 圖例
+  g.fillStyle='#fffffff0'; g.beginPath(); g.roundRect(BX+18,BY+18,330,92,14); g.fill();
+  g.lineWidth=6; g.strokeStyle='#e0404a'; g.beginPath(); g.moveTo(BX+36,BY+48); g.lineTo(BX+96,BY+48); g.stroke();
+  g.setLineDash([14,9]); g.strokeStyle='#2f6fe0'; g.beginPath(); g.moveTo(BX+36,BY+82); g.lineTo(BX+96,BY+82); g.stroke(); g.setLineDash([]);
+  g.fillStyle='#1f3a3d'; g.font=`700 26px ${FONT}`; g.fillText('你的回答',BX+112,BY+57); g.fillText('正確縣市界',BX+112,BY+91);
+  g.restore();
+
+  // 等級＋評語
+  g.fillStyle=rk.c; g.beginPath(); g.roundRect(BX,860,200,200,26); g.fill();
+  g.fillStyle='#fff'; g.textAlign='center'; g.font=`700 28px ${FONT}`; g.fillText('等級',BX+100,905);
+  g.font=`800 130px ${FONT}`; g.fillText(rk.l,BX+100,1030); g.textAlign='left';
+  let fs=56; g.font=`800 ${fs}px ${FONT}`; while(g.measureText(rk.t).width>760&&fs>30){fs-=2;g.font=`800 ${fs}px ${FONT}`}
+  g.fillStyle='#1f3a3d'; g.fillText(rk.t,BX+236,935);
+  g.fillStyle='#7b8a8a'; g.font=`600 30px ${FONT}`; g.fillText(`判定寬鬆度：${TOL_LABEL[tol]}・${tol} km`,BX+236,990);
+  g.fillText(`出題範圍：${$('o-region').selectedOptions[0].textContent.replace('出題','')}`,BX+236,1038);
+
+  // 分數
+  g.fillStyle='#fffaf0'; g.beginPath(); g.roundRect(BX,1100,BW,230,26); g.fill();
+  g.fillStyle='#7b8a8a'; g.font=`700 28px ${FONT}`; g.fillText('一致率',BX+36,1148);
+  g.fillStyle='#b64a2d'; g.font=`800 120px ${FONT}`; g.fillText(`${r.percent.toFixed(1)}%`,BX+30,1270);
+  const rows=[['點數',`${r.points.toLocaleString()} / 100,000`],['精準度',`${r.precision.toFixed(1)}%`],['涵蓋率',`${r.coverage.toFixed(1)}%`]];
+  rows.forEach(([k,v],i)=>{
+    const y=1160+i*60; g.fillStyle='#7b8a8a'; g.font=`700 28px ${FONT}`; g.textAlign='left'; g.fillText(k,BX+520,y+8);
+    g.fillStyle='#1f3a3d'; g.font=`800 40px ${FONT}`; g.textAlign='right'; g.fillText(v,BX+BW-36,y+8);
+  });
+  g.textAlign='left';
+
+  // 頁尾：遊戲網址與圖資標註
+  g.fillStyle='#1f3a3d'; g.beginPath(); g.roundRect(BX,1350,BW,74,18); g.fill();
+  g.fillStyle='#fff'; g.textAlign='center'; g.font=`800 34px ${FONT}`;
+  g.fillText('縣界王 台灣版　'+SITE_URL,W/2,1399);
+  g.fillStyle='#7b8a8a'; g.font=`500 16px ${FONT}`;
+  ATTR_IMG.forEach((t,i)=>g.fillText(t,W/2,1450+i*22));
+  return cvs;
 }
+function buildShareText(){
+  const r=lastResult, rk=rankOf(r.percent,name);
+  return `我在「縣界王 台灣版」畫了${name}！
+一致率 ${r.percent.toFixed(1)}%（${r.points.toLocaleString()} 點／100,000 點）
+等級 ${rk.l}：${rk.t}
+
+隨機抽一個縣市，限時 ${ROUND_SEC} 秒描出它的邊界，你認得出自己家鄉的縣界嗎？
+
+▶ 來玩：${SITE_FULL}
+
+靈感來自日本遊戲「${ORIG_TITLE}」（${ORIG_MAKER}）
+${ORIG_URL}`;
+}
+let shareBlob=null, shareURL=null;
+async function share(){
+  if(!lastResult||state!=='reveal')return;
+  const btn=$('b-share'); btn.disabled=true; const label=btn.firstChild.textContent; btn.firstChild.textContent='產生圖片中… ';
+  try{
+    const cvs=await buildShareImage();
+    shareBlob=await new Promise(res=>cvs.toBlob(res,'image/png'));
+    if(shareURL)URL.revokeObjectURL(shareURL); shareURL=URL.createObjectURL(shareBlob);
+    $('share-img').src=shareURL; $('sh-text').value=buildShareText();
+    const file=new File([shareBlob],`縣界王-${name}.png`,{type:'image/png'});
+    $('sh-share').classList.toggle('hidden',!(navigator.canShare&&navigator.canShare({files:[file]})));
+    $('sh-copy').classList.toggle('hidden',!(navigator.clipboard&&window.ClipboardItem));
+    $('share').classList.remove('hidden');
+  }catch(err){toast('產生圖片失敗，請再試一次')}
+  btn.disabled=false; btn.firstChild.textContent=label;
+}
+$('sh-close').onclick=()=>$('share').classList.add('hidden');
+$('share').addEventListener('click',e=>{if(e.target.id==='share')$('share').classList.add('hidden')});
+$('sh-dl').onclick=()=>{const a=document.createElement('a');a.href=shareURL;a.download=`縣界王-${name}.png`;document.body.appendChild(a);a.click();a.remove()};
+$('sh-copy').onclick=async()=>{try{await navigator.clipboard.write([new ClipboardItem({'image/png':shareBlob})]);toast('已複製圖片，可以直接貼上')}catch{toast('這個瀏覽器不支援複製圖片，請改用下載')}};
+$('sh-copytext').onclick=async()=>{
+  const t=$('sh-text'); try{await navigator.clipboard.writeText(t.value);toast('已複製文字')}catch{t.select();document.execCommand&&document.execCommand('copy');toast('已複製文字')}
+};
+$('sh-share').onclick=async()=>{
+  try{await navigator.share({files:[new File([shareBlob],`縣界王-${name}.png`,{type:'image/png'})],text:$('sh-text').value})}catch{}
+};
 
 /* ---------- 綁定 ---------- */
 $('b-start').onclick=startRound;
@@ -471,14 +636,18 @@ $('b-submit').onclick=submit;
 $('b-share').onclick=share;
 $('b-undo').onclick=undo; $('b-clear').onclick=clearAll; $('b-fit').onclick=()=>name&&fitStart();
 document.querySelectorAll('.tool[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});  // 避免按鍵再次觸發剛點過的按鈕
 document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&state==='play'&&e.target.tagName!=='SELECT'){e.preventDefault();if(!spaceDown){spaceDown=true;applyPE()}return}
   if(e.target.tagName==='SELECT'||e.metaKey||e.ctrlKey) return;
   const k=e.key.toLowerCase();
-  if(state==='play'){ if(k==='d')setMode('draw'); else if(k==='m')setMode('pan'); else if(k==='e')setMode('erase'); else if(k==='z')undo(); else if(k==='enter')submit() }
+  if(state==='play'){ if(k==='d')setMode('draw'); else if(k==='f')setMode('pan'); else if(k==='e')setMode('erase'); else if(k==='z')undo(); else if(k==='enter')submit() }
   else if(state==='reveal'&&k==='enter')startRound();
 });
-const prefs=store.get(PKEY,{}); if(REGIONS[prefs.region])$('o-region').value=prefs.region; if(['10','4','1'].includes(prefs.tol))$('o-tol').value=prefs.tol;
+const prefs=store.get(PKEY,{}); if(REGIONS[prefs.region])$('o-region').value=prefs.region; if(['10','5','2'].includes(prefs.tol))$('o-tol').value=prefs.tol;
 
+document.addEventListener('keyup',e=>{if(e.code==='Space'&&spaceDown){e.preventDefault();spaceDown=false;applyPE()}});
+window.addEventListener('blur',()=>{if(spaceDown){spaceDown=false;applyPE()}});
 sizeCanvas(); setMode('pan'); show('menu');
 })();
 </script>
