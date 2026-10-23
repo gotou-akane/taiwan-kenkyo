@@ -14,8 +14,11 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;display:flex;flex-direction:column}
-header{display:flex;align-items:center;justify-content:center;height:52px;border-bottom:1px solid var(--line);background:#fff;font-weight:800;font-size:19px;letter-spacing:.08em;flex:none}
+header{display:flex;align-items:center;justify-content:center;gap:6px 16px;flex-wrap:wrap;min-height:52px;padding:4px 12px;border-bottom:1px solid var(--line);background:#fff;flex:none}
+header .ttl{font-weight:800;font-size:19px;letter-spacing:.08em}
 header small{font-weight:500;color:var(--muted);margin-left:10px;font-size:12px;letter-spacing:0}
+.idea{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.02em}
+.idea img{height:26px;width:auto;mix-blend-mode:multiply}
 main{flex:1;display:flex;min-height:0}
 aside{width:300px;flex:none;padding:18px;overflow:auto;background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
 #mapwrap{flex:1;position:relative;min-width:0}
@@ -90,6 +93,8 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
 @media (max-width:760px){
   main{flex-direction:column-reverse}
   aside{width:auto;max-height:46vh;border-right:0;border-top:1px solid var(--line);padding:12px;gap:10px}
+  header{flex-direction:column;gap:2px;padding:5px 12px}
+  .idea img{height:19px}
   #qname{font-size:19px}
   #q{right:56px}
   .help{display:none}                                  /* 手機操作直覺，不顯示操作說明 */
@@ -114,7 +119,10 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
 </style>
 </head>
 <body>
-<header>縣界王<small>台灣版・一題決勝</small></header>
+<header>
+  <div class="ttl">縣界王<small>台灣版・一題決勝</small></div>
+  <a class="idea" href="https://kskdazegames.com/games/kenkyo" target="_blank" rel="noopener" title="Idea by KSKだぜGAMES（原作「県境王」）"><span>Idea by</span><img src="assets/kskdaze-logo.jpg" alt="KSKだぜGAMES"></a>
+</header>
 <main>
 <aside>
   <!-- 設定（作答中鎖定） -->
@@ -177,7 +185,7 @@ kbd.w,kbd.m{font-family:inherit;letter-spacing:.02em}
     <button class="btn" id="b-again">再玩一題 <span>→</span></button>
     <button class="btn sec" id="b-share">分享結果圖片 <span>↗</span></button>
   </section>
-  <p class="credit">靈感來自日本遊戲<a href="https://kskdazegames.com/games/kenkyo" target="_blank" rel="noopener">「県境王」（KSKだぜGAMES）</a>。本站為非官方的致敬作品，玩法與判定規則參考原作，程式、資料與介面為另外實作。</p>
+  <p class="credit">靈感來自日本遊戲<a href="https://kskdazegames.com/games/kenkyo" target="_blank" rel="noopener">「県境王」（KSKだぜGAMES）</a>。作者 X：<a href="https://x.com/kskdaze" target="_blank" rel="noopener">@kskdaze</a>。本站為非官方的致敬作品，玩法與判定規則參考原作，程式、資料與介面為另外實作。</p>
 </aside>
 
 <div id="mapwrap">
@@ -534,6 +542,7 @@ function submit(){
   })();
 }
 const TOL_LABEL={10:'簡單',5:'普通',2:'嚴格'};
+const LOGO=new Image(); LOGO.src='assets/kskdaze-logo.jpg';
 const FONT='"PingFang TC","Noto Sans TC","Microsoft JhengHei",-apple-system,sans-serif';
 function getTile(z,x,y){return new Promise(res=>{const c=hill.createTile({x,y,z},()=>res(c))})}
 async function buildShareImage(){
@@ -542,10 +551,15 @@ async function buildShareImage(){
   const tol=+$('o-tol').value, r=lastResult, rk=rankOf(r.percent,name);
   g.fillStyle='#f4f1ea'; g.fillRect(0,0,W,H);
   // 標題列
+  try{await LOGO.decode()}catch{}
   g.fillStyle='#1f3a3d'; g.font=`800 54px ${FONT}`; g.textBaseline='alphabetic'; g.textAlign='left';
-  g.fillText('縣界王 台灣版',BX,78);
-  g.fillStyle='#7b8a8a'; g.font=`600 24px ${FONT}`; g.fillText('隨機抽縣市・限時描出邊界',BX,112);
-  g.textAlign='right'; g.fillStyle='#b64a2d'; g.font=`800 54px ${FONT}`; g.fillText(name,W-BX,78); g.textAlign='left';
+  g.fillText('縣界王 台灣版',BX,68);
+  g.fillStyle='#7b8a8a'; g.font=`700 26px ${FONT}`; g.fillText('Idea by',BX,114);   // 作者請求：標題旁以英文標示原作者並放 logo
+  if(LOGO.complete&&LOGO.naturalWidth){
+    const lh=42, lw=lh*LOGO.naturalWidth/LOGO.naturalHeight, ix=BX+g.measureText('Idea by').width+12;
+    g.save(); g.globalCompositeOperation='multiply'; g.drawImage(LOGO,ix,114-lh+8,lw,lh); g.restore();
+  }
+  g.textAlign='right'; g.fillStyle='#b64a2d'; g.font=`800 54px ${FONT}`; g.fillText(name,W-BX,68); g.textAlign='left';
 
   // 地圖範圍：正解 ∪ 玩家的線
   const pts=[]; D.counties[name].lines.forEach(l=>l.forEach(c=>pts.push(L.latLng(c[1],c[0])))); strokes.forEach(st=>st.forEach(p=>pts.push(p)));
